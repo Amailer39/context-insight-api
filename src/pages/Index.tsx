@@ -1,11 +1,83 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useState, useEffect } from 'react';
+import { Brain } from 'lucide-react';
+import { DocumentUpload } from '@/components/DocumentUpload';
+import { DocumentList } from '@/components/DocumentList';
+import { DocumentQuery } from '@/components/DocumentQuery';
+import { useToast } from '@/hooks/use-toast';
+import { api, type Document } from '@/lib/api';
 
 const Index = () => {
+  const [documents, setDocuments] = useState<Document[]>([]);
+  const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
+
+  const loadDocuments = async (searchQuery?: string) => {
+    try {
+      const docs = await api.getDocuments(searchQuery);
+      setDocuments(docs);
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to load documents.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadDocuments();
+  }, []);
+
+  const handleDelete = async (id: string) => {
+    try {
+      await api.deleteDocument(id);
+      toast({
+        title: 'Document deleted',
+        description: 'The document has been removed.',
+      });
+      loadDocuments();
+      if (selectedDocument?.id === id) {
+        setSelectedDocument(null);
+      }
+    } catch (error) {
+      toast({
+        title: 'Delete failed',
+        description: 'Failed to delete document.',
+        variant: 'destructive',
+      });
+    }
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
+    <div className="min-h-screen p-6">
+      <div className="max-w-7xl mx-auto space-y-8">
+        {/* Header */}
+        <div className="text-center space-y-4 py-12">
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <Brain className="w-12 h-12 text-primary" />
+            <h1 className="text-5xl font-bold gradient-text">ContextIQ</h1>
+          </div>
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+            Semantic document search and AI-powered querying
+          </p>
+        </div>
+
+        {/* Upload Section */}
+        <DocumentUpload onUploadSuccess={() => loadDocuments()} />
+
+        {/* Main Content Grid */}
+        <div className="grid lg:grid-cols-2 gap-6">
+          <DocumentList
+            documents={documents}
+            onDelete={handleDelete}
+            onSelect={setSelectedDocument}
+            onSearch={(query) => loadDocuments(query || undefined)}
+          />
+          <DocumentQuery selectedDocument={selectedDocument} />
+        </div>
       </div>
     </div>
   );
