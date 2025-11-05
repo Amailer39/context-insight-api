@@ -50,12 +50,12 @@ export const DocumentUpload = ({ onUploadSuccess }: DocumentUploadProps) => {
   };
 
   return (
-    <div className="glass-card rounded-xl p-8 transition-all duration-300 hover:glow-effect">
+    <div className="glass-card rounded-xl p-8 animate-scale-in">
       <div
         className={`border-2 border-dashed rounded-xl p-12 text-center transition-all duration-300 ${
           isDragging 
-            ? 'border-primary bg-primary/10 scale-105' 
-            : 'border-border hover:border-primary/50'
+            ? 'border-primary bg-primary/20 scale-105 glow-effect' 
+            : 'border-border/50 hover:border-primary/70 hover:bg-primary/5'
         }`}
         onDragOver={(e) => {
           e.preventDefault();
@@ -64,9 +64,14 @@ export const DocumentUpload = ({ onUploadSuccess }: DocumentUploadProps) => {
         onDragLeave={() => setIsDragging(false)}
         onDrop={handleDrop}
       >
-        <Upload className="w-12 h-12 mx-auto mb-4 text-primary" />
-        <h3 className="text-xl font-semibold mb-2">Upload Document</h3>
-        <p className="text-muted-foreground mb-6">
+        <div className="relative inline-block mb-4">
+          <Upload className="w-14 h-14 mx-auto text-primary relative z-10" />
+          <div className="absolute inset-0 blur-xl bg-primary/40 animate-pulse"></div>
+        </div>
+        <h3 className="text-2xl font-bold mb-2 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+          Upload Document
+        </h3>
+        <p className="text-foreground/70 mb-6 font-medium">
           Drag and drop your file here, or click to browse
         </p>
 

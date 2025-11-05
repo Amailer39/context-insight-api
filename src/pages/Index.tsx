@@ -55,14 +55,25 @@ const Index = () => {
     <div className="min-h-screen p-6">
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
-        <div className="text-center space-y-4 py-12">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <Brain className="w-12 h-12 text-primary" />
-            <h1 className="text-5xl font-bold gradient-text">ContextIQ</h1>
+        <div className="text-center space-y-4 py-12 animate-fade-in">
+          <div className="flex items-center justify-center gap-4 mb-6">
+            <div className="relative">
+              <Brain className="w-16 h-16 text-primary hero-glow relative z-10" />
+              <div className="absolute inset-0 blur-2xl bg-primary/30 animate-pulse"></div>
+            </div>
+            <h1 className="text-6xl font-extrabold gradient-text tracking-tight">ContextIQ</h1>
           </div>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Semantic document search and AI-powered querying
+          <p className="text-xl text-foreground/80 max-w-2xl mx-auto font-medium">
+            Semantic document search powered by AI
           </p>
+          <div className="flex gap-2 justify-center items-center text-sm">
+            <div className="px-3 py-1 rounded-full bg-primary/10 text-primary border border-primary/20">
+              Neural Search
+            </div>
+            <div className="px-3 py-1 rounded-full bg-accent/10 text-accent border border-accent/20">
+              Real-time Analysis
+            </div>
+          </div>
         </div>
 
         {/* Upload Section */}
