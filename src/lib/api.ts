@@ -1,3 +1,5 @@
+import { getAuthHeaders } from './auth';
+
 const API_BASE_URL = 'http://localhost:8000/api/v1/contextiq';
 
 export interface Document {
@@ -23,7 +25,9 @@ export const api = {
       ? `${API_BASE_URL}/documents/?q=${encodeURIComponent(query)}`
       : `${API_BASE_URL}/documents/`;
     
-    const response = await fetch(url);
+    const response = await fetch(url, {
+      headers: getAuthHeaders(),
+    });
     if (!response.ok) throw new Error('Failed to fetch documents');
     return response.json();
   },
@@ -36,6 +40,7 @@ export const api = {
 
     const response = await fetch(`${API_BASE_URL}/documents/`, {
       method: 'POST',
+      headers: getAuthHeaders(),
       body: formData,
     });
     
@@ -47,7 +52,10 @@ export const api = {
   async createDocument(title: string, content: string): Promise<Document> {
     const response = await fetch(`${API_BASE_URL}/documents/`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        ...getAuthHeaders(),
+      },
       body: JSON.stringify({ title, parse_content: content }),
     });
     
@@ -59,6 +67,7 @@ export const api = {
   async deleteDocument(id: string): Promise<void> {
     const response = await fetch(`${API_BASE_URL}/documents/${id}/`, {
       method: 'DELETE',
+      headers: getAuthHeaders(),
     });
     
     if (!response.ok) throw new Error('Failed to delete document');
@@ -68,7 +77,10 @@ export const api = {
   async queryDocument(documentId: string, query: string): Promise<QueryResult[]> {
     const response = await fetch(`${API_BASE_URL}/query/`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        ...getAuthHeaders(),
+      },
       body: JSON.stringify({ document_id: documentId, query }),
     });
     

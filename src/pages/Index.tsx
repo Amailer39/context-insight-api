@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Brain } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Brain, LogOut } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { DocumentUpload } from '@/components/DocumentUpload';
 import { DocumentList } from '@/components/DocumentList';
 import { DocumentQuery } from '@/components/DocumentQuery';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 import { api, type Document } from '@/lib/api';
 
 const Index = () => {
@@ -11,6 +14,8 @@ const Index = () => {
   const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+  const { user, logout, isLoading: authLoading } = useAuth();
+  const navigate = useNavigate();
 
   const loadDocuments = async (searchQuery?: string) => {
     try {
@@ -28,8 +33,14 @@ const Index = () => {
   };
 
   useEffect(() => {
-    loadDocuments();
-  }, []);
+    if (!authLoading && !user) {
+      navigate('/auth');
+      return;
+    }
+    if (user) {
+      loadDocuments();
+    }
+  }, [user, authLoading, navigate]);
 
   const handleDelete = async (id: string) => {
     try {
@@ -51,11 +62,40 @@ const Index = () => {
     }
   };
 
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/auth');
+    } catch (error) {
+      toast({
+        title: 'Logout failed',
+        description: 'Please try again.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  if (authLoading) {
+    return <div className="min-h-screen flex items-center justify-center">
+      <div className="animate-pulse text-foreground/70">Loading...</div>
+    </div>;
+  }
+
+  if (!user) return null;
+
   return (
     <div className="min-h-screen p-6">
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
-        <div className="text-center space-y-4 py-12 animate-fade-in">
+        <div className="text-center space-y-4 py-12 animate-fade-in relative">
+          <Button 
+            onClick={handleLogout}
+            variant="outline"
+            className="absolute top-0 right-0 gap-2"
+          >
+            <LogOut className="w-4 h-4" />
+            Logout
+          </Button>
           <div className="flex items-center justify-center gap-4 mb-6">
             <div className="relative">
               <Brain className="w-16 h-16 text-primary hero-glow relative z-10" />
