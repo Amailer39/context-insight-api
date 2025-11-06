@@ -1,139 +1,192 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Brain, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DocumentUpload } from '@/components/DocumentUpload';
-import { DocumentList } from '@/components/DocumentList';
 import { DocumentQuery } from '@/components/DocumentQuery';
-import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/contexts/AuthContext';
 import { api, type Document } from '@/lib/api';
+import { useAuth } from '@/contexts/AuthContext';
+import { FileText, LogOut, LogIn, Trash2, Plus } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 
 const Index = () => {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const { user, logout, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
 
-  const loadDocuments = async (searchQuery?: string) => {
+  const loadDocuments = async () => {
+    if (!user) {
+      setDocuments([]);
+      return;
+    }
+    
+    setIsLoading(true);
     try {
-      const docs = await api.getDocuments(searchQuery);
+      const docs = await api.getDocuments();
       setDocuments(docs);
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to load documents.',
-        variant: 'destructive',
-      });
+      console.error('Failed to load documents:', error);
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    if (user && !authLoading) {
-      loadDocuments();
-    }
-  }, [user, authLoading]);
+    loadDocuments();
+  }, [user]);
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!user) return;
+    
     try {
       await api.deleteDocument(id);
-      toast({
-        title: 'Document deleted',
-        description: 'The document has been removed.',
-      });
-      loadDocuments();
+      await loadDocuments();
       if (selectedDocument?.id === id) {
         setSelectedDocument(null);
       }
     } catch (error) {
-      toast({
-        title: 'Delete failed',
-        description: 'Failed to delete document.',
-        variant: 'destructive',
-      });
+      console.error('Failed to delete document:', error);
     }
+  };
+
+  const handleUploadSuccess = () => {
+    loadDocuments();
+    setUploadDialogOpen(false);
   };
 
   const handleLogout = async () => {
-    try {
-      await logout();
-      navigate('/auth');
-    } catch (error) {
-      toast({
-        title: 'Logout failed',
-        description: 'Please try again.',
-        variant: 'destructive',
-      });
-    }
+    await logout();
+    navigate('/auth');
   };
 
   if (authLoading) {
-    return <div className="min-h-screen flex items-center justify-center">
-      <div className="animate-pulse text-foreground/70">Loading...</div>
-    </div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-pulse text-primary text-lg">Loading...</div>
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen p-6">
-      <div className="max-w-7xl mx-auto space-y-8">
-        {/* Header */}
-        <div className="text-center space-y-4 py-12 animate-fade-in relative">
+    <div className="min-h-screen flex flex-col">
+      {/* Header */}
+      <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
+        <div className="flex items-center justify-between p-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary via-accent to-primary p-[2px]">
+              <div className="w-full h-full rounded-lg bg-background flex items-center justify-center">
+                <FileText className="w-5 h-5 text-primary" />
+              </div>
+            </div>
+            <div>
+              <h1 className="text-xl font-bold gradient-text">ContextIQ</h1>
+              <p className="text-xs text-muted-foreground">AI Document Chat</p>
+            </div>
+          </div>
           {user ? (
-            <Button 
-              onClick={handleLogout}
-              variant="outline"
-              className="absolute top-0 right-0 gap-2"
-            >
-              <LogOut className="w-4 h-4" />
+            <Button variant="outline" size="sm" onClick={handleLogout}>
+              <LogOut className="w-4 h-4 mr-2" />
               Logout
             </Button>
           ) : (
-            <Button 
-              onClick={() => navigate('/auth')}
-              variant="outline"
-              className="absolute top-0 right-0 gap-2"
-            >
-              Login / Sign Up
+            <Button size="sm" onClick={() => navigate('/auth')}>
+              <LogIn className="w-4 h-4 mr-2" />
+              Login
             </Button>
           )}
-          <div className="flex items-center justify-center gap-4 mb-6">
-            <div className="relative">
-              <Brain className="w-16 h-16 text-primary hero-glow relative z-10" />
-              <div className="absolute inset-0 blur-2xl bg-primary/30 animate-pulse"></div>
-            </div>
-            <h1 className="text-6xl font-extrabold gradient-text tracking-tight">ContextIQ</h1>
-          </div>
-          <p className="text-xl text-foreground/80 max-w-2xl mx-auto font-medium">
-            Semantic document search powered by AI
-          </p>
-          <div className="flex gap-2 justify-center items-center text-sm">
-            <div className="px-3 py-1 rounded-full bg-primary/10 text-primary border border-primary/20">
-              Neural Search
-            </div>
-            <div className="px-3 py-1 rounded-full bg-accent/10 text-accent border border-accent/20">
-              Real-time Analysis
-            </div>
-          </div>
         </div>
+      </header>
 
-        {/* Upload Section */}
-        <DocumentUpload onUploadSuccess={() => loadDocuments()} user={user} />
+      {/* Main Layout */}
+      <div className="flex flex-1 overflow-hidden">
+        {/* Sidebar */}
+        <aside className="w-80 border-r border-border bg-card/30 backdrop-blur-sm flex flex-col">
+          {/* Upload Button */}
+          <div className="p-4 border-b border-border">
+            <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="w-full" size="lg">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Upload Document
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Upload Document</DialogTitle>
+                  <DialogDescription>
+                    Upload a document to chat with it using AI
+                  </DialogDescription>
+                </DialogHeader>
+                <DocumentUpload onUploadSuccess={handleUploadSuccess} user={user} />
+              </DialogContent>
+            </Dialog>
+          </div>
 
-        {/* Main Content Grid */}
-        <div className="grid lg:grid-cols-2 gap-6">
-          <DocumentList
-            documents={documents}
-            onDelete={handleDelete}
-            onSelect={setSelectedDocument}
-            onSearch={(query) => loadDocuments(query || undefined)}
-            user={user}
-          />
+          {/* Documents List */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-2">
+            <h2 className="text-sm font-semibold text-muted-foreground mb-3 uppercase tracking-wide">
+              Your Documents
+            </h2>
+            {isLoading ? (
+              <div className="text-center py-8 text-muted-foreground text-sm">
+                Loading documents...
+              </div>
+            ) : documents.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground text-sm">
+                <FileText className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                <p>No documents yet</p>
+                <p className="text-xs mt-1">Upload a document to get started</p>
+              </div>
+            ) : (
+              documents.map((doc) => (
+                <div
+                  key={doc.id}
+                  onClick={() => setSelectedDocument(doc)}
+                  className={`group relative p-3 rounded-lg cursor-pointer transition-all ${
+                    selectedDocument?.id === doc.id
+                      ? 'bg-primary/10 border border-primary/50'
+                      : 'hover:bg-muted/50 border border-transparent'
+                  }`}
+                >
+                  <div className="flex items-start gap-3">
+                    <FileText className={`w-5 h-5 flex-shrink-0 ${
+                      selectedDocument?.id === doc.id ? 'text-primary' : 'text-muted-foreground'
+                    }`} />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm truncate">{doc.title}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(doc.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={(e) => handleDelete(doc.id, e)}
+                    >
+                      <Trash2 className="w-3 h-3 text-destructive" />
+                    </Button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </aside>
+
+        {/* Main Chat Area */}
+        <main className="flex-1 flex flex-col bg-background/50">
           <DocumentQuery selectedDocument={selectedDocument} user={user} />
-        </div>
+        </main>
       </div>
     </div>
   );

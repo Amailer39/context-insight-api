@@ -1,8 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Upload, FileText } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Upload } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { api } from '@/lib/api';
 import { type User } from '@/lib/auth';
@@ -24,7 +22,6 @@ interface DocumentUploadProps {
 export const DocumentUpload = ({ onUploadSuccess, user }: DocumentUploadProps) => {
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  const [title, setTitle] = useState('');
   const [showAuthDialog, setShowAuthDialog] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -37,12 +34,11 @@ export const DocumentUpload = ({ onUploadSuccess, user }: DocumentUploadProps) =
 
     setIsUploading(true);
     try {
-      await api.uploadDocument(file, title || undefined);
+      await api.uploadDocument(file);
       toast({
         title: 'Document uploaded',
         description: `${file.name} has been uploaded successfully.`,
       });
-      setTitle('');
       onUploadSuccess();
     } catch (error) {
       toast({
@@ -53,7 +49,7 @@ export const DocumentUpload = ({ onUploadSuccess, user }: DocumentUploadProps) =
     } finally {
       setIsUploading(false);
     }
-  }, [title, toast, onUploadSuccess, user]);
+  }, [toast, onUploadSuccess, user]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -70,62 +66,42 @@ export const DocumentUpload = ({ onUploadSuccess, user }: DocumentUploadProps) =
 
   return (
     <>
-      <div className="glass-card rounded-xl p-8 animate-scale-in">
-        <div
-          className={`border-2 border-dashed rounded-xl p-12 text-center transition-all duration-300 ${
-            isDragging 
-              ? 'border-primary bg-primary/20 scale-105 glow-effect' 
-              : 'border-border/50 hover:border-primary/70 hover:bg-primary/5'
-          }`}
-          onDragOver={(e) => {
-            e.preventDefault();
-            setIsDragging(true);
-          }}
-          onDragLeave={() => setIsDragging(false)}
-          onDrop={handleDrop}
-        >
-          <div className="relative inline-block mb-4">
-            <Upload className="w-14 h-14 mx-auto text-primary relative z-10" />
-            <div className="absolute inset-0 blur-xl bg-primary/40 animate-pulse"></div>
+      <div
+        onDrop={handleDrop}
+        onDragOver={(e) => {
+          e.preventDefault();
+          setIsDragging(true);
+        }}
+        onDragLeave={() => setIsDragging(false)}
+        className={`border-2 border-dashed rounded-lg p-6 text-center transition-all cursor-pointer ${
+          isDragging
+            ? 'border-primary bg-primary/5'
+            : 'border-border hover:border-primary/50 hover:bg-primary/5'
+        } ${isUploading ? 'opacity-50 pointer-events-none' : ''}`}
+        onClick={() => !isUploading && document.getElementById('file-input')?.click()}
+      >
+        <div className="space-y-3">
+          <div className="w-12 h-12 mx-auto rounded-lg bg-primary/10 flex items-center justify-center">
+            <Upload className="w-6 h-6 text-primary" />
           </div>
-          <h3 className="text-2xl font-bold mb-2 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-            Upload Document
-          </h3>
-          <p className="text-foreground/70 mb-6 font-medium">
-            Drag and drop your file here, or click to browse
-          </p>
-
-          <div className="max-w-sm mx-auto space-y-4">
-            <Input
-              type="text"
-              placeholder="Document title (optional)"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="bg-background/50"
-            />
-            
-            <label htmlFor="file-upload">
-              <Button 
-                variant="default" 
-                disabled={isUploading}
-                className="w-full cursor-pointer"
-                asChild
-              >
-                <span>
-                  <FileText className="w-4 h-4 mr-2" />
-                  {isUploading ? 'Uploading...' : 'Select File'}
-                </span>
-              </Button>
-              <input
-                id="file-upload"
-                type="file"
-                className="hidden"
-                onChange={handleFileInput}
-                disabled={isUploading}
-              />
-            </label>
+          <div>
+            <p className="font-medium mb-1">
+              {isUploading ? 'Uploading...' : isDragging ? 'Drop here' : 'Upload Document'}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              PDF, DOC, DOCX, or TXT
+            </p>
           </div>
         </div>
+
+        <input
+          id="file-input"
+          type="file"
+          onChange={handleFileInput}
+          className="hidden"
+          accept=".pdf,.doc,.docx,.txt"
+          disabled={isUploading}
+        />
       </div>
 
       <AlertDialog open={showAuthDialog} onOpenChange={setShowAuthDialog}>
