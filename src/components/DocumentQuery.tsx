@@ -1,22 +1,41 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Send, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { api, type QueryResult, type Document } from '@/lib/api';
+import { type User } from '@/lib/auth';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface DocumentQueryProps {
   selectedDocument: Document | null;
+  user: User | null;
 }
 
-export const DocumentQuery = ({ selectedDocument }: DocumentQueryProps) => {
+export const DocumentQuery = ({ selectedDocument, user }: DocumentQueryProps) => {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<QueryResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [showAuthDialog, setShowAuthDialog] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleQuery = async () => {
     if (!selectedDocument || !query.trim()) return;
+
+    if (!user) {
+      setShowAuthDialog(true);
+      return;
+    }
 
     setIsLoading(true);
     try {
@@ -94,6 +113,22 @@ export const DocumentQuery = ({ selectedDocument }: DocumentQueryProps) => {
           <p>Select a document to start querying</p>
         </div>
       )}
+
+      <AlertDialog open={showAuthDialog} onOpenChange={setShowAuthDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Authentication Required</AlertDialogTitle>
+            <AlertDialogDescription>
+              Please login or sign up to query documents.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => navigate('/auth')}>
+              Go to Login
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

@@ -33,14 +33,10 @@ const Index = () => {
   };
 
   useEffect(() => {
-    if (!authLoading && !user) {
-      navigate('/auth');
-      return;
-    }
-    if (user) {
+    if (user && !authLoading) {
       loadDocuments();
     }
-  }, [user, authLoading, navigate]);
+  }, [user, authLoading]);
 
   const handleDelete = async (id: string) => {
     try {
@@ -81,21 +77,29 @@ const Index = () => {
     </div>;
   }
 
-  if (!user) return null;
-
   return (
     <div className="min-h-screen p-6">
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
         <div className="text-center space-y-4 py-12 animate-fade-in relative">
-          <Button 
-            onClick={handleLogout}
-            variant="outline"
-            className="absolute top-0 right-0 gap-2"
-          >
-            <LogOut className="w-4 h-4" />
-            Logout
-          </Button>
+          {user ? (
+            <Button 
+              onClick={handleLogout}
+              variant="outline"
+              className="absolute top-0 right-0 gap-2"
+            >
+              <LogOut className="w-4 h-4" />
+              Logout
+            </Button>
+          ) : (
+            <Button 
+              onClick={() => navigate('/auth')}
+              variant="outline"
+              className="absolute top-0 right-0 gap-2"
+            >
+              Login / Sign Up
+            </Button>
+          )}
           <div className="flex items-center justify-center gap-4 mb-6">
             <div className="relative">
               <Brain className="w-16 h-16 text-primary hero-glow relative z-10" />
@@ -117,7 +121,7 @@ const Index = () => {
         </div>
 
         {/* Upload Section */}
-        <DocumentUpload onUploadSuccess={() => loadDocuments()} />
+        <DocumentUpload onUploadSuccess={() => loadDocuments()} user={user} />
 
         {/* Main Content Grid */}
         <div className="grid lg:grid-cols-2 gap-6">
@@ -126,8 +130,9 @@ const Index = () => {
             onDelete={handleDelete}
             onSelect={setSelectedDocument}
             onSearch={(query) => loadDocuments(query || undefined)}
+            user={user}
           />
-          <DocumentQuery selectedDocument={selectedDocument} />
+          <DocumentQuery selectedDocument={selectedDocument} user={user} />
         </div>
       </div>
     </div>

@@ -1,18 +1,32 @@
 import { FileText, Trash2, Search } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useState } from 'react';
 import type { Document } from '@/lib/api';
+import { type User } from '@/lib/auth';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface DocumentListProps {
   documents: Document[];
   onDelete: (id: string) => void;
   onSelect: (doc: Document) => void;
   onSearch: (query: string) => void;
+  user: User | null;
 }
 
-export const DocumentList = ({ documents, onDelete, onSelect, onSearch }: DocumentListProps) => {
+export const DocumentList = ({ documents, onDelete, onSelect, onSearch, user }: DocumentListProps) => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [showAuthDialog, setShowAuthDialog] = useState(false);
+  const navigate = useNavigate();
 
   const handleSearch = (value: string) => {
     setSearchQuery(value);
@@ -66,6 +80,10 @@ export const DocumentList = ({ documents, onDelete, onSelect, onSearch }: Docume
                 size="icon"
                 onClick={(e) => {
                   e.stopPropagation();
+                  if (!user) {
+                    setShowAuthDialog(true);
+                    return;
+                  }
                   onDelete(doc.id);
                 }}
                 className="opacity-0 group-hover:opacity-100 transition-opacity"
@@ -76,6 +94,22 @@ export const DocumentList = ({ documents, onDelete, onSelect, onSearch }: Docume
           ))
         )}
       </div>
+
+      <AlertDialog open={showAuthDialog} onOpenChange={setShowAuthDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Authentication Required</AlertDialogTitle>
+            <AlertDialogDescription>
+              Please login or sign up to delete documents.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => navigate('/auth')}>
+              Go to Login
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
