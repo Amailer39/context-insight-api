@@ -1,6 +1,6 @@
 import { getAuthHeaders } from './auth';
 
-const API_BASE_URL = 'http://localhost:8000/api/v1/contextiq';
+const API_BASE_URL = import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/contextiq` : 'http://localhost:8000/api/v1/contextiq';
 
 export interface Document {
   id: string;
